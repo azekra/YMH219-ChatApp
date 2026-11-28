@@ -51,6 +51,36 @@ public sealed class ChatClient : IAsyncDisposable
                 session = new ConnectionSession(tcpClient);
                 _session = session;
                 await session.SendAsync(new ChatWireMessage(ChatProtocol.Join, UserName: userName), cancellationToken).ConfigureAwait(false);
+
+                using var acknowledgementTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                acknowledgementTimeout.CancelAfter(TimeSpan.FromSeconds(10));
+
+                string? responseLine;
+                try
+                {
+                    responseLine = await session.Reader.ReadLineAsync(acknowledgementTimeout.Token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+                {
+                    throw new TimeoutException("The server did not confirm the connection within 10 seconds.", exception);
+                }
+
+                if (responseLine is null)
+                {
+                    throw new IOException("The server closed the connection before confirming the username.");
+                }
+
+                var response = ChatProtocol.Deserialize(responseLine);
+                if (response?.Type == ChatProtocol.Error)
+                {
+                    throw new InvalidOperationException(response.Text ?? "The server rejected the connection.");
+                }
+
+                if (response?.Type != ChatProtocol.Joined || !string.Equals(response.UserName, userName, StringComparison.Ordinal))
+                {
+                    throw new InvalidDataException("The server returned an invalid connection acknowledgement.");
+                }
+
                 session.MarkConnected();
                 RaiseConnectionStateChanged(true);
                 session.ReadTask = ReadMessagesAsync(session);

@@ -6,6 +6,7 @@ namespace YMH219_ChatApp.Networking;
 internal static class ChatProtocol
 {
     public const string Join = "join";
+    public const string Joined = "joined";
     public const string Message = "message";
     public const string Chat = "chat";
     public const string System = "system";

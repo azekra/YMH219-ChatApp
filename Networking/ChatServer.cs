@@ -10,6 +10,7 @@ public sealed class ChatServer : IAsyncDisposable
     private readonly ConcurrentDictionary<Guid, ClientSession> _sessions = new();
     private readonly List<Task> _clientTasks = [];
     private readonly object _clientTasksLock = new();
+    private readonly object _registrationLock = new();
     private readonly SemaphoreSlim _lifecycleGate = new(1, 1);
     private TcpListener? _listener;
     private CancellationTokenSource? _cancellation;
@@ -20,11 +21,20 @@ public sealed class ChatServer : IAsyncDisposable
     public event EventHandler<ClientConnectionEventArgs>? ClientDisconnected;
     public event EventHandler<ChatServerErrorEventArgs>? ErrorOccurred;
 
-    public IReadOnlyCollection<ChatClientInfo> ConnectedClients => _sessions.Values
-        .Where(session => session.UserName is not null)
-        .Select(session => new ChatClientInfo(session.Id, session.UserName!, session.ConnectedAt))
-        .OrderBy(client => client.UserName, StringComparer.OrdinalIgnoreCase)
-        .ToArray();
+    public IReadOnlyCollection<ChatClientInfo> ConnectedClients
+    {
+        get
+        {
+            lock (_registrationLock)
+            {
+                return _sessions.Values
+                    .Where(session => session.UserName is not null)
+                    .Select(session => new ChatClientInfo(session.Id, session.UserName!, session.ConnectedAt))
+                    .OrderBy(client => client.UserName, StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+            }
+        }
+    }
 
     public async Task StartAsync(IPAddress? address = null, int port = 5000)
     {
@@ -145,6 +155,7 @@ public sealed class ChatServer : IAsyncDisposable
     private async Task HandleClientAsync(ClientSession session, CancellationToken cancellationToken)
     {
         var registered = false;
+        var announced = false;
         try
         {
             var joinLine = await session.Reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
@@ -156,10 +167,16 @@ public sealed class ChatServer : IAsyncDisposable
                 return;
             }
 
-            session.UserName = userName;
-            session.ConnectedAt = DateTimeOffset.UtcNow;
+            if (!TryRegisterSession(session, userName))
+            {
+                await session.SendAsync(new ChatWireMessage(ChatProtocol.Error, Text: "That username is already connected."), cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
             registered = true;
+            await session.SendAsync(new ChatWireMessage(ChatProtocol.Joined, UserName: userName, Timestamp: session.ConnectedAt), cancellationToken).ConfigureAwait(false);
             RaiseClientConnected(session.ToClientInfo());
+            announced = true;
 
             var joined = new ChatMessageEventArgs(userName, $"{userName} joined the chat.", DateTimeOffset.UtcNow, true);
             await BroadcastAsync(new ChatWireMessage(ChatProtocol.System, joined.UserName, joined.Text, joined.Timestamp), cancellationToken).ConfigureAwait(false);
@@ -209,15 +226,36 @@ public sealed class ChatServer : IAsyncDisposable
         }
         finally
         {
-            _sessions.TryRemove(session.Id, out _);
+            lock (_registrationLock)
+            {
+                _sessions.TryRemove(session.Id, out _);
+            }
+
             session.Close();
-            if (registered)
+            if (registered && announced)
             {
                 RaiseClientDisconnected(session.ToClientInfo());
                 var left = new ChatMessageEventArgs(session.UserName!, $"{session.UserName} left the chat.", DateTimeOffset.UtcNow, true);
                 await BroadcastAsync(new ChatWireMessage(ChatProtocol.System, left.UserName, left.Text, left.Timestamp), CancellationToken.None).ConfigureAwait(false);
                 RaiseMessage(left);
             }
+        }
+    }
+
+    private bool TryRegisterSession(ClientSession session, string userName)
+    {
+        lock (_registrationLock)
+        {
+            if (_sessions.Values.Any(existing =>
+                    !ReferenceEquals(existing, session) &&
+                    string.Equals(existing.UserName, userName, StringComparison.OrdinalIgnoreCase)))
+            {
+                return false;
+            }
+
+            session.UserName = userName;
+            session.ConnectedAt = DateTimeOffset.UtcNow;
+            return true;
         }
     }
 
