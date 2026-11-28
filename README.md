@@ -1,71 +1,96 @@
-# YMH219-ChatApp
+# 💬 YMH219 - ChatApp
 
-A Windows Forms TCP client-server chat application for the YMH219 assignment. An app instance can host the server and connect as a client. Other instances on the same computer or local network can connect with a username and exchange timestamped messages.
 
-## Features
+**Nesne Tabanlı Programlama (YMH 219)** dersi kapsamında **C#** ve **.NET 10 Windows Forms** kullanılarak geliştirilen, TCP tabanlı istemci-sunucu (client-server) masaüstü sohbet uygulamasıdır.
 
-- Start and stop a TCP server from the app.
-- Connect to a server using its IP address, port, and username.
-- Send and receive messages with server-generated timestamps.
-- View connected usernames and connection times on the server.
-- Display connection and network errors without closing the application.
-- Support multiple connected clients.
+## 📸 Ekran Görüntüleri
 
-## Technologies
+### start server
+![](images/startserver.png)
 
-- C# and .NET 10 for Windows (`net10.0-windows`).
-- Windows Forms for the user interface.
-- `TcpListener` and `TcpClient` for TCP communication.
-- `NetworkStream`, `StreamReader`, and `StreamWriter` for newline-delimited UTF-8 JSON messages.
-- `async`/`await` and cancellation for network operations and shutdown.
+### message user interface
+![](images/message.png)
 
-No additional NuGet packages are required.
+### main menu
+![](images/main.png)
 
-## Requirements
 
-- Windows with the .NET 10 SDK to build, or the .NET 10 Desktop Runtime to run a published build.
-- For LAN use, both computers must be connected to the same reachable network.
+Bir uygulama örneği hem sunucu (server) olarak hizmet verebilir hem de istemci (client) olarak sohbete katılabilir. Aynı bilgisayardaki veya yerel ağdaki (LAN) diğer uygulama örnekleri, bir kullanıcı adı seçerek sunucuya bağlanabilir ve sunucu tarafından oluşturulan zaman damgalarıyla anlık mesajlaşabilir.
 
-## Run locally
+---
 
-1. Open `YMH219-ChatApp.slnx` in Visual Studio 2026, or open a PowerShell terminal in the project directory.
-2. Build and run the `YMH219-ChatApp` project.
-3. In the **Server** card, keep bind address `0.0.0.0` and port `5000`, then select **Start server**.
-4. In the **Connect** card, keep server address `127.0.0.1`, port `5000`, enter a username, and select **Connect**.
-5. Open a second app instance and connect it to `127.0.0.1:5000` with a different username to test messaging between two clients.
+## 🛠️ Kullanılan Teknolojiler ve NuGet Paketleri
 
-To run from PowerShell:
+* **Programlama Dili:** C#
+* **Platform & Framework:** .NET 10 (`net10.0-windows`) / Windows Forms (WinForms)
+* **Ağ İletişimi (TCP):** `TcpListener` ve `TcpClient`
+* **Veri Akışı ve Protokol:** `NetworkStream`, `StreamReader` ve `StreamWriter` (yeni satırla ayrılmış UTF-8 JSON mesajları)
+* **Asenkron Programlama:** Ağ işlemleri ve güvenli kapatma için `async`/`await` ve iptal mekanizması (`CancellationToken`)
+* **Geliştirme Ortamı (IDE):** Visual Studio 2026
+* **Sürüm Kontrolü:** Git & GitHub
+* **NuGet Paketleri:** Harici bir NuGet paketi kullanılmamıştır. Proje tamamen standart .NET 10 ve Windows Forms kütüphaneleri ile geliştirilmiştir.
 
-```powershell
-dotnet run --project .\YMH219-ChatApp.csproj
+---
+
+## 🚀 Kurulum ve Çalıştırma Adımları
+
+### Gereksinimler
+* Windows işletim sistemi.
+* Projeyi derlemek için **.NET 10 SDK** (veya derlenmiş sürümü çalıştırmak için **.NET 10 Desktop Runtime**).
+* Yerel ağ (LAN) kullanımı için bilgisayarların birbirine erişebilir aynı ağa bağlı olması gerekir.
+
+### 1. Depoyu Klonlayın
+```bash
+git clone [https://github.com/kullanici-adiniz/YMH219-ChatApp.git](https://github.com/kullanici-adiniz/YMH219-ChatApp.git)
 ```
 
-## Run over a local network
+### 2. Yerel Olarak Çalıştırma (Localhost)
+1. `YMH219-ChatApp.slnx` dosyasını **Visual Studio 2026** ile açın ve projeyi derleyip çalıştırın. Alternatif olarak proje dizininde PowerShell açıp şu komutu çalıştırabilirsiniz:
+   ```powershell
+   dotnet run --project .\YMH219-ChatApp.csproj
+   ```
+2. **Server** kartında bağlama adresini (bind address) `0.0.0.0`, portu `5000` olarak bırakın ve **Start server** butonuna tıklayın.
+3. **Connect** kartında sunucu adresini `127.0.0.1`, portu `5000` olarak bırakın, bir kullanıcı adı girin ve **Connect** butonuna tıklayın.
+4. İki istemci arasında mesajlaşmayı test etmek için ikinci bir uygulama örneği açın ve farklı bir kullanıcı adı ile `127.0.0.1:5000` adresine bağlanın.
 
-1. Start the server on the computer that will host the chat. The bind address should be `0.0.0.0` so the listener accepts connections on its network interfaces.
-2. If Windows Firewall prompts, allow the application on **Private networks**. If needed, create an inbound firewall rule for the chosen TCP port.
-3. Find the host computer's private IPv4 address (for example, with `ipconfig`).
-4. On each other computer, run the app and enter that private IPv4 address and the server's port in the **Connect** card. Choose a unique username and connect.
-5. Keep the host app running and its server started while clients are chatting.
+### 3. Yerel Ağ (LAN) Üzerinde Çalıştırma
+1. Sohbete ev sahipliği yapacak bilgisayarda sunucuyu başlatın. Ağ arayüzlerinden gelen bağlantıları kabul edebilmesi için bağlama adresi `0.0.0.0` olmalıdır.
+2. Windows Güvenlik Duvarı (Firewall) uyarısı çıkarsa uygulamaya **Özel (Private)** ağlarda izin verin. Gerekirse seçilen TCP portu için gelen (inbound) güvenlik duvarı kuralı oluşturun.
+3. Sunucu bilgisayarının yerel IPv4 adresini öğrenin (örneğin komut isteminde `ipconfig` komutu ile).
+4. Diğer bilgisayarlarda uygulamayı çalıştırın; **Connect** kartına sunucunun yerel IPv4 adresini, port numarasını ve benzersiz bir kullanıcı adını girerek bağlanın.
+5. İstemciler mesajlaşırken sunucu uygulamasını açık ve sunucuyu çalışır durumda tutun.
 
-The default port is `5000`. If it is already in use, choose another available port and use the same value on the clients.
+---
 
-## Screenshots for submission
+## ✨ Uygulamanın Temel Özellikleri
 
-Capture the actual running application in Windows and add both images to `docs/screenshots/`:
+* **Sunucu Yönetimi:** Uygulama üzerinden TCP sunucusunu başlatma ve durdurma.
+* **İstemci Bağlantısı:** IP adresi, port numarası ve kullanıcı adı ile sunucuya bağlanma.
+* **Zaman Damgalı Mesajlaşma:** Sunucu tarafından oluşturulan zaman damgalarıyla anlık mesaj gönderme ve alma.
+* **Bağlı İstemci Takibi:** Sunucu ekranında bağlı kullanıcı adlarını ve bağlantı zamanlarını görüntüleme.
+* **Hata Yönetimi:** Bağlantı ve ağ hatalarını uygulamayı kapatmadan kullanıcıya bildirme.
+* **Çoklu İstemci Desteği:** Birden fazla istemcinin aynı anda bağlanıp mesajlaşabilmesi.
 
-- `docs/screenshots/server-running.png` — server started with at least one connected client visible.
-- `docs/screenshots/chat-messages.png` — two different usernames with timestamped messages visible.
+### 🧱 Proje Yapısı
 
-After adding the images, include them in this section using Markdown image links. The screenshots must come from the running app; they are not generated mockups.
+| Dosya | Açıklama |
+|---|---|
+| `Form1.cs` | Ana panel (dashboard) düzeni ve kullanıcı arayüzü olay yönetimi. |
+| `Networking/ChatServer.cs` | Asenkron TCP sunucusu ve bağlı istemcilerin yönetimi. |
+| `Networking/ChatClient.cs` | Asenkron TCP istemci işlemleri. |
+| `Networking/ChatProtocol.cs` | İstemci ve sunucu arasındaki ortak JSON mesaj protokolü tanımlamaları. |
 
-## Project layout
+---
 
-- `Form1.cs` — dashboard layout and UI event handling.
-- `Networking/ChatServer.cs` — asynchronous TCP server and connected-client management.
-- `Networking/ChatClient.cs` — asynchronous TCP client.
-- `Networking/ChatProtocol.cs` — shared JSON wire message definitions.
+## 📝 Bilinen Sınırlamalar ve Geliştirme Notları
 
-## Notes
+* **Güvenlik ve Ağ Kapsamı:** Bu proje yerel ağ (LAN) üzerinde çalışmak üzere tasarlanmış bir ders ödevidir. Şifreleme (encryption), hesap doğrulama (authentication) veya güvenilmeyen ağ trafiğine karşı koruma sağlamaz. Doğrudan genel internete (public internet) açılmamalıdır.
+* **Varsayılan Port:** Varsayılan port `5000`'dir. Eğer bu port sistemde başka bir uygulama tarafından kullanılıyorsa, kullanılabilir başka bir port seçilmeli ve tüm istemcilerde aynı port değeri girilmelidir.
+* **Platform Bağımlılığı:** `.NET 10` Windows Forms (`net10.0-windows`) kullanıldığı için uygulama yalnızca Windows işletim sisteminde çalışmaktadır.
 
-This project is intended for a local-network course assignment. It does not provide encryption, account authentication, or protection against untrusted network traffic. Do not expose it directly to the public internet.
+---
+
+## 👨‍💻 Geliştirici Bilgileri
+
+* **Ad Soyad:** [Enes Zukra]
+* **Öğrenci Numarası:** [250541616]
