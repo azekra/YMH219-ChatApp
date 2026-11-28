@@ -41,7 +41,7 @@ Bir uygulama örneği hem sunucu (server) olarak hizmet verebilir hem de istemci
 
 ### 1. Depoyu Klonlayın
 ```bash
-git clone [https://github.com/kullanici-adiniz/YMH219-ChatApp.git](https://github.com/kullanici-adiniz/YMH219-ChatApp.git)
+git clone [https://github.com/azekra/YMH219-ChatApp.git](https://github.com/azekra/YMH219-ChatApp.git)
 ```
 
 ### 2. Yerel Olarak Çalıştırma (Localhost)
